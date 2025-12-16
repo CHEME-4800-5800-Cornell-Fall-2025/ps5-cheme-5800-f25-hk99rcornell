@@ -104,10 +104,28 @@ function mysolve(model::MyValueIterationModel, problem::MyMDPProblemModel; ϵ::F
     tmp = zeros(Float64, number_of_actions); # temporary storage for action values
     Uold = zeros(Float64, number_of_states); # temporary storage for old value function
 
-    # TODO: Implement the value iteration with convergence checking algorithm
-    throw(ErrorError("Oooops!: You need to implement the value iteration with convergence checking algorithm!"))
-
-    return MyValueIterationSolution(problem, U); # wrap and return
+for k ∈ 1:k_max
+        
+        # copy current U to Uold for convergence check
+        copyto!(Uold, U)
+        
+        # update the value function (Bellman backup)
+        for s ∈ 1:number_of_states
+            for a ∈ 1:number_of_actions
+                tmp[a] = _lookahead(problem, U, s, a);
+            end
+            U[s] = maximum(tmp);
+        end
+        
+        # check for convergence
+        if norm(U - Uold, Inf) ≤ ϵ
+            return MyValueIterationSolution(problem, U);  # early exit on convergence
+        end
+    end
+    
+    # if we reach here, max iterations were exhausted
+    println("Warning: Value Iteration did not converge within the maximum number of iterations.")
+    return MyValueIterationSolution(problem, U);
 end
 
 """
